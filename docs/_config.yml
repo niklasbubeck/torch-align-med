@@ -1,0 +1,13 @@
+title: torch-align-med
+description: Semantic-alignment metrics between latent spaces — the alignment-evaluation analog of torch-fidelity.
+theme: jekyll-theme-cayman
+show_downloads: false
+google_analytics:
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: true
+include:
+  - PLAN.md
+  - REPORT.md

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>torch-align-med — semantic-alignment metrics for latent spaces</title>
+    <meta name="description" content="Semantic-alignment metrics between latent spaces — the alignment-evaluation analog of torch-fidelity. 2D natural, 2D medical, 3D volumes from one API.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+  </head>
+  <body>
+    <div class="nav-wrap">
+      <nav class="nav" aria-label="Primary">
+        <a class="nav__brand" href="#top">
+          <span class="nav__brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12.5" cy="16" r="6.6" fill="none" stroke="#9a4a2c" stroke-width="2.6"/>
+              <circle cx="19.5" cy="16" r="6.6" fill="none" stroke="#c25a35" stroke-width="2.6" opacity="0.8"/>
+              <circle cx="16" cy="16" r="1.3" fill="#9a4a2c"/>
+            </svg>
+          </span>
+          torch-align-med
+        </a>
+        <div class="nav__links">
+          <a href="#why">Why</a>
+          <a href="#quick-start">Quick start</a>
+          <a href="#reference-encoders">Encoders</a>
+          <a href="https://github.com/niklasbubeck/torch-align-med">GitHub</a>
+        </div>
+      </nav>
+    </div>
+    <span id="top"></span>
+
+    <header class="hero">
+      <div class="hero__layout">
+        <div class="hero__copy">
+          <span class="hero__pill">v0.1 · open source</span>
+          <h1 class="hero__title">Measure how aligned<br>two latent spaces <span class="accent">really</span> are.</h1>
+          <p class="hero__lede">
+            A small PyTorch library of semantic-alignment metrics between latent spaces — the alignment-evaluation analog of <code>torch-fidelity</code>. 2D natural images, 2D medical images, and 3D volumes, from a single API.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="https://github.com/niklasbubeck/torch-align-med">View on GitHub →</a>
+            <a class="btn btn--ghost" href="#quick-start">See the quick start</a>
+          </div>
+          <div class="hero__meta">
+            <span><strong>6</strong> Tier-1 metrics</span>
+            <span><strong>4</strong> encoder wrappers</span>
+            <span><strong>2D &amp; 3D</strong> from one API</span>
+          </div>
+        </div>
+
+        <figure class="alignment-viz" aria-label="Visual depiction of two latent spaces being aligned">
+          <figcaption class="alignment-viz__caption">
+            <span>Latent A → <span class="accent">aligned</span> → Latent B</span>
+            <span>16 tokens</span>
+          </figcaption>
+
+          <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img">
+            <defs>
+              <linearGradient id="cellA" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#f3ead6"/>
+                <stop offset="100%" stop-color="#e3d7bd"/>
+              </linearGradient>
+              <linearGradient id="cellB" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fbecd9"/>
+                <stop offset="100%" stop-color="#d8a07a"/>
+              </linearGradient>
+              <linearGradient id="cellC" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#c25a35"/>
+                <stop offset="100%" stop-color="#9a4a2c"/>
+              </linearGradient>
+              <linearGradient id="thread" x1="0" y1="0.5" x2="1" y2="0.5">
+                <stop offset="0%" stop-color="#9a4a2c" stop-opacity="0.12"/>
+                <stop offset="50%" stop-color="#9a4a2c" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#9a4a2c" stop-opacity="0.12"/>
+              </linearGradient>
+              <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0%" stop-color="#9a4a2c" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#9a4a2c" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- soft halo behind both grids -->
+            <ellipse cx="240" cy="160" rx="220" ry="120" fill="url(#halo)"/>
+
+            <!-- labels -->
+            <text x="80"  y="38" font-family="Inter, sans-serif" font-size="13" font-style="italic" fill="#5a4d3c" text-anchor="middle">Latent space A</text>
+            <text x="400" y="38" font-family="Inter, sans-serif" font-size="13" font-style="italic" fill="#5a4d3c" text-anchor="middle">Latent space B</text>
+            <text x="80"  y="298" font-family="JetBrains Mono, monospace" font-size="10" fill="#8a7c66" text-anchor="middle">[B, N, D]</text>
+            <text x="400" y="298" font-family="JetBrains Mono, monospace" font-size="10" fill="#8a7c66" text-anchor="middle">[B, N, D]</text>
+
+            <!-- correspondence threads (curved beziers between grid centers) -->
+            <g stroke="url(#thread)" fill="none" stroke-linecap="round">
+              <path d="M 132 70 C 220 70, 260 70, 348 70"   stroke-width="1.6"/>
+              <path d="M 132 110 C 220 110, 260 110, 348 110" stroke-width="1.4" opacity="0.85"/>
+              <path d="M 132 150 C 220 150, 260 150, 348 150" stroke-width="2"   />
+              <path d="M 132 190 C 220 190, 260 190, 348 190" stroke-width="1.3" opacity="0.7"/>
+              <path d="M 132 230 C 220 230, 260 230, 348 230" stroke-width="1.6" opacity="0.9"/>
+              <path d="M 132 270 C 220 270, 260 270, 348 270" stroke-width="1.2" opacity="0.6"/>
+              <!-- a few crossing threads for richness -->
+              <path d="M 132 70  C 220 90,  260 230, 348 230" stroke-width="1"   opacity="0.45"/>
+              <path d="M 132 270 C 220 220, 260 90,  348 70"  stroke-width="1"   opacity="0.45"/>
+              <path d="M 132 110 C 220 140, 260 180, 348 190" stroke-width="0.9" opacity="0.4"/>
+              <path d="M 132 230 C 220 200, 260 130, 348 110" stroke-width="0.9" opacity="0.4"/>
+            </g>
+
+            <!-- left grid (4x4) at x=20..140, y=50..290, cells 30x30 with 10 gap -->
+            <g>
+              <rect x="20"  y="50"  width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="60"  y="50"  width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="100" y="50"  width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="140" y="50"  width="30" height="30" rx="5" fill="url(#cellC)"/>
+
+              <rect x="20"  y="90"  width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="60"  y="90"  width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="100" y="90"  width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="140" y="90"  width="30" height="30" rx="5" fill="url(#cellB)"/>
+
+              <rect x="20"  y="130" width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="60"  y="130" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="100" y="130" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="140" y="130" width="30" height="30" rx="5" fill="url(#cellA)"/>
+
+              <rect x="20"  y="170" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="60"  y="170" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="100" y="170" width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="140" y="170" width="30" height="30" rx="5" fill="url(#cellB)"/>
+
+              <rect x="20"  y="210" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="60"  y="210" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="100" y="210" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="140" y="210" width="30" height="30" rx="5" fill="url(#cellC)"/>
+
+              <rect x="20"  y="250" width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="60"  y="250" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="100" y="250" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="140" y="250" width="30" height="30" rx="5" fill="url(#cellA)"/>
+            </g>
+
+            <!-- right grid (4x4) at x=340..460 -->
+            <g>
+              <rect x="340" y="50"  width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="380" y="50"  width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="420" y="50"  width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="460" y="50"  width="20" height="30" rx="5" fill="url(#cellA)"/>
+
+              <rect x="340" y="90"  width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="380" y="90"  width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="420" y="90"  width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="460" y="90"  width="20" height="30" rx="5" fill="url(#cellC)"/>
+
+              <rect x="340" y="130" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="380" y="130" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="420" y="130" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="460" y="130" width="20" height="30" rx="5" fill="url(#cellB)"/>
+
+              <rect x="340" y="170" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="380" y="170" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="420" y="170" width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="460" y="170" width="20" height="30" rx="5" fill="url(#cellA)"/>
+
+              <rect x="340" y="210" width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="380" y="210" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="420" y="210" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="460" y="210" width="20" height="30" rx="5" fill="url(#cellB)"/>
+
+              <rect x="340" y="250" width="30" height="30" rx="5" fill="url(#cellA)"/>
+              <rect x="380" y="250" width="30" height="30" rx="5" fill="url(#cellC)"/>
+              <rect x="420" y="250" width="30" height="30" rx="5" fill="url(#cellB)"/>
+              <rect x="460" y="250" width="20" height="30" rx="5" fill="url(#cellA)"/>
+            </g>
+
+            <!-- alignment chevron in the middle -->
+            <g transform="translate(225, 150)">
+              <circle cx="15" cy="10" r="22" fill="#fbf6ec" stroke="#d8a07a" stroke-width="1"/>
+              <path d="M 6 4 L 18 10 L 6 16" stroke="#9a4a2c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M 14 4 L 26 10 L 14 16" stroke="#c25a35" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+            </g>
+          </svg>
+        </figure>
+      </div>
+    </header>
+
+    <main class="page">
+      <article class="prose">
+        <h2 id="why">Why</h2>
+        <p>Modern diffusion / VAE training increasingly leans on <strong>representation alignment</strong> — see REPA, VA-VAE, REPA-E, iREPA, RAE, and the wider <a href="https://kdidi.netlify.app/blog/ml/2025-12-31-r4g/">Representation-for-Generation literature</a>. Every paper measures alignment slightly differently, often re-implementing the same metric from scratch. <code>torch-align-med</code> collects six precise, reproducible alignment metrics behind one ergonomic API.</p>
+
+        <p>The package answers two questions:</p>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature__icon">⇆</div>
+            <h3 class="feature__title">How aligned are these two latent spaces?</h3>
+            <p class="feature__body">Pairwise metrics: <code>patch_cosine</code>, <code>linear_cka</code>, <code>l_mdms</code>. One scalar over the pair.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__icon">◧</div>
+            <h3 class="feature__title">Is this encoder a good alignment target?</h3>
+            <p class="feature__body">Single-encoder diagnostics from iREPA: <code>lds</code>, <code>cds</code>, <code>rmsc</code>. Reported |r|&nbsp;&gt;&nbsp;0.85 with downstream FID across 27 encoders — far stronger than ImageNet-1K linear probing (|r|&nbsp;=&nbsp;0.26).</p>
+          </div>
+        </div>
+
+        <h2 id="quick-start">Quick start</h2>
+        <div class="code-preview">
+          <div class="code-preview__bar">
+            <span class="code-preview__dot code-preview__dot--accent"></span>
+            <span class="code-preview__dot"></span>
+            <span class="code-preview__dot"></span>
+            <span class="code-preview__name">align.py</span>
+          </div>
+<pre><code><span class="tok-k">from</span> torch_align_med <span class="tok-k">import</span> calculate_alignment_metrics, make_grid_coords
+
+coords <span class="tok-o">=</span> make_grid_coords((<span class="tok-m">16</span>, <span class="tok-m">16</span>))   <span class="tok-c"># 2D — or (D, H, W) for 3D</span>
+
+scores <span class="tok-o">=</span> calculate_alignment_metrics(
+    feats_a, feats_b,                 <span class="tok-c"># [B, N, D]</span>
+    coords<span class="tok-o">=</span>coords,
+    patch_cosine<span class="tok-o">=</span><span class="tok-k">True</span>, linear_cka<span class="tok-o">=</span><span class="tok-k">True</span>, l_mdms<span class="tok-o">=</span><span class="tok-k">True</span>,
+    lds<span class="tok-o">=</span><span class="tok-k">True</span>, cds<span class="tok-o">=</span><span class="tok-k">True</span>, rmsc<span class="tok-o">=</span><span class="tok-k">True</span>,
+)
+</code></pre>
+        </div>
+
+        <h2 id="reference-encoders">Reference encoders</h2>
+        <p>Optional convenience wrappers around standard alignment-target encoders, lazy-imported so they never weigh on the base install.</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Modality</th>
+              <th>Wrapper</th>
+              <th>Hugging Face repo</th>
+              <th>License</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2D natural</td>
+              <td><code>DinoV2Encoder</code></td>
+              <td><code>facebook/dinov2-with-registers-large</code></td>
+              <td>Apache-2.0</td>
+            </tr>
+            <tr>
+              <td>2D medical (radiology)</td>
+              <td><code>DinoV2Encoder</code></td>
+              <td><code>microsoft/rad-dino</code></td>
+              <td>MIT</td>
+            </tr>
+            <tr>
+              <td>2D medical (cross-modality)</td>
+              <td><code>BiomedClipEncoder</code></td>
+              <td><code>microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224</code></td>
+              <td>MIT</td>
+            </tr>
+            <tr>
+              <td>3D medical (native)</td>
+              <td><code>ThreeDinoEncoder</code></td>
+              <td><code>AICONSlab/3DINO-ViT</code></td>
+              <td>CC-BY-NC-ND 4.0</td>
+            </tr>
+            <tr>
+              <td>3D medical (pseudo-3D)</td>
+              <td><code>PlaneCycleEncoder</code></td>
+              <td><code>HINTLab/PlaneCycle</code> (lifts a frozen 2D DINOv3)</td>
+              <td>Apache-2.0</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="design-principles">Design principles</h2>
+        <ul>
+          <li><strong>Features-only.</strong> Core metrics never load images or run models — they consume two feature tensors. Convenience encoder wrappers live in a separate, optional module.</li>
+          <li><strong>Dimensionality-agnostic.</strong> A coordinate tensor <code>[N, S]</code> generalises to 2D, 3D, and irregular layouts with no metric-side branching.</li>
+          <li><strong>Two metric families, one dispatcher.</strong> Pairwise metrics emit one scalar; encoder diagnostics emit two (<code>{name}_input1</code>, <code>{name}_input2</code>).</li>
+        </ul>
+
+        <h2 id="install">Install</h2>
+<pre><code>pip install torch-align-med                              <span class="tok-c"># core</span>
+pip install <span class="tok-s">"torch-align-med[encoders-2d]"</span>               <span class="tok-c"># + DINOv2 wrappers</span>
+pip install <span class="tok-s">"torch-align-med[encoders-medical]"</span>          <span class="tok-c"># + RAD-DINO, BiomedCLIP</span>
+pip install <span class="tok-s">"torch-align-med[all]"</span>                       <span class="tok-c"># everything</span>
+</code></pre>
+
+        <h2 id="citing">Citing the underlying methods</h2>
+        <p>If you use the metrics in published work, please cite the source papers:</p>
+        <ul>
+          <li><strong>REPA</strong> — Yu et al., <em>Representation Alignment for Generation</em>, arXiv:2410.06940 (2024).</li>
+          <li><strong>VA-VAE</strong> — Yao et al., <em>Reconstruction vs. Generation</em>, arXiv:2501.01423 (2025).</li>
+          <li><strong>iREPA</strong> — Singh et al., <em>What matters for Representation Alignment</em>, arXiv:2512.10794 (2025).</li>
+          <li><strong>CKA</strong> — Kornblith et al., <em>Similarity of Neural Network Representations Revisited</em>, ICML 2019, arXiv:1905.00414.</li>
+        </ul>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <div class="site-footer__brand">
+          <a class="site-footer__name" href="#top">
+            <span class="nav__brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12.5" cy="16" r="6.6" fill="none" stroke="#9a4a2c" stroke-width="2.6"/>
+                <circle cx="19.5" cy="16" r="6.6" fill="none" stroke="#c25a35" stroke-width="2.6" opacity="0.8"/>
+                <circle cx="16" cy="16" r="1.3" fill="#9a4a2c"/>
+              </svg>
+            </span>
+            torch-align-med
+          </a>
+          <p class="site-footer__tagline">A small PyTorch library of semantic-alignment metrics between latent spaces — built for the R4G era, across 2D and 3D.</p>
+        </div>
+
+        <div class="site-footer__col">
+          <h4>On this page</h4>
+          <ul class="site-footer__list">
+            <li><a href="#why">Why <span class="arrow">→</span></a></li>
+            <li><a href="#quick-start">Quick start <span class="arrow">→</span></a></li>
+            <li><a href="#reference-encoders">Reference encoders <span class="arrow">→</span></a></li>
+            <li><a href="#install">Install <span class="arrow">→</span></a></li>
+          </ul>
+        </div>
+
+        <div class="site-footer__col">
+          <h4>Project</h4>
+          <ul class="site-footer__list">
+            <li><a href="https://github.com/niklasbubeck/torch-align-med">GitHub repository <span class="arrow">↗</span></a></li>
+            <li><a href="https://github.com/niklasbubeck/torch-align-med/issues">Issue tracker <span class="arrow">↗</span></a></li>
+            <li><a href="https://github.com/niklasbubeck/torch-align-med/blob/main/LICENSE">MIT license <span class="arrow">↗</span></a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="site-footer__meta">
+        <span>© 2026 Niklas Bubeck · MIT licensed</span>
+        <span class="site-footer__badges">
+          <span class="badge">v0.1</span>
+          <span class="badge">torch + numpy</span>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>
